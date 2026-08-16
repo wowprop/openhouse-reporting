@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Create the parent Weekly Report record, linked to the Property.
     const reportRecordId = await createRecord(WEEKLY_REPORT_TABLE_ID, {
-      Date: formatReportDate(body.date),
+      Date: new Date(`${body.date}T00:00:00`).getTime(),
       Property: [body.propertyRecordId],
       "Submitted By": body.submittedBy,
       Groups: body.groups,
