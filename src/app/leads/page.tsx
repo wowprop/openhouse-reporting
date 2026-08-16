@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Nav from "@/components/Nav";
 
 interface LeadRecord {
   record_id: string;
@@ -66,6 +67,8 @@ export default function LeadsPage() {
   }, [fetchLeads]);
 
   return (
+    <>
+    <Nav />
     <main className="min-h-screen px-6 py-12">
       <div className="max-w-6xl mx-auto">
         <p className="text-xs tracking-[0.2em] uppercase text-gold-dark mb-2">
@@ -126,11 +129,32 @@ export default function LeadsPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 
 function formatCell(value: unknown): string {
   if (value === undefined || value === null) return "—";
+
+  // Lark Link fields return an array of objects like
+  // { record_ids, table_id, text, text_arr, type } — pull out the readable text.
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "—";
+    if (
+      typeof value[0] === "object" &&
+      value[0] !== null &&
+      "text" in (value[0] as Record<string, unknown>)
+    ) {
+      return (
+        value
+          .map((v) => (v as { text?: string }).text)
+          .filter(Boolean)
+          .join(", ") || "—"
+      );
+    }
+    return value.map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v))).join(", ");
+  }
+
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }

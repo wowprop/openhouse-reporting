@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BuyerReferenceInput, FOLLOW_UP_OPTIONS, FollowUpStatus, PropertyOption } from "@/lib/types";
+import Nav from "@/components/Nav";
 
 function emptyBuyerRef(): BuyerReferenceInput {
   return { last4: "", feedback: "", followUpStatus: "Not Started" };
@@ -78,9 +79,11 @@ export default function ReportPage() {
     }
   }
 
-  if (status === "success") {
+if (status === "success") {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6">
+      <>
+        <Nav />
+        <main className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-sm w-full text-center">
           <h1 className="font-display text-3xl mb-3">Report submitted</h1>
           <p className="text-ink/60 mb-8">
@@ -93,12 +96,15 @@ export default function ReportPage() {
             Submit another report
           </button>
         </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="min-h-screen px-6 py-12">
+    <>
+      <Nav />
+      <main className="min-h-screen px-6 py-12">
       <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
         <p className="text-xs tracking-[0.2em] uppercase text-gold-dark mb-2">
           PropertyGiant
@@ -258,6 +264,7 @@ export default function ReportPage() {
         </div>
       </form>
     </main>
+    </>
   );
 }
 
