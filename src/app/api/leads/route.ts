@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { listRecords } from "@/lib/lark";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const LEADS_TABLE_ID = process.env.LARK_TABLE_WALKIN_LEADS!;
 
 export async function GET() {
   try {
     const { items } = await listRecords(LEADS_TABLE_ID, { pageSize: 100 });
-    return NextResponse.json({ ok: true, leads: items });
+    return NextResponse.json(
+      { ok: true, leads: items },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     console.error("Failed to fetch leads:", err);
     return NextResponse.json({ error: "Failed to fetch leads" }, { status: 500 });

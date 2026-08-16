@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface LeadRecord {
   record_id: string;
@@ -23,19 +23,47 @@ const COLUMNS = [
   "Specific Requirements",
 ];
 
+const POLL_INTERVAL_MS = 15000;
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<LeadRecord[] | null>(null);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const isFirstLoad = useRef(true);
+
+  const fetchLeads = useCallback(async () => {
+    if (!isFirstLoad.current) setRefreshing(true);
+    try {
+      const res = await fetch("/api/leads", { cache: "no-store" });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setLeads(data.leads);
+        setError("");
+        setLastUpdated(new Date());
+      }
+    } catch {
+      setError("Failed to load leads");
+    } finally {
+      isFirstLoad.current = false;
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch("/api/leads")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) setError(data.error);
-        else setLeads(data.leads);
-      })
-      .catch(() => setError("Failed to load leads"));
-  }, []);
+    fetchLeads();
+    const interval = setInterval(fetchLeads, POLL_INTERVAL_MS);
+
+    const onFocus = () => fetchLeads();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchLeads]);
 
   return (
     <main className="min-h-screen px-6 py-12">
@@ -43,9 +71,24 @@ export default function LeadsPage() {
         <p className="text-xs tracking-[0.2em] uppercase text-gold-dark mb-2">
           PropertyGiant
         </p>
-        <h1 className="font-display text-3xl mb-1">Walk-in Leads</h1>
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+          <h1 className="font-display text-3xl">Walk-in Leads</h1>
+          <button
+            onClick={fetchLeads}
+            disabled={refreshing}
+            className="text-sm font-medium text-gold-dark hover:text-charcoal transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <span className={refreshing ? "animate-spin inline-block" : "inline-block"}>
+              ↻
+            </span>
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
         <p className="text-sm text-ink/50 mb-8">
           NRIC is not shown here — view it directly in Lark if needed.
+          {lastUpdated && (
+            <> · Updated {lastUpdated.toLocaleTimeString("en-SG")}</>
+          )}
         </p>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

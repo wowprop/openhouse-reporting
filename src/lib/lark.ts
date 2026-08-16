@@ -47,6 +47,7 @@ async function larkFetch(path: string, init: RequestInit = {}) {
   const token = await getTenantAccessToken();
   const res = await fetch(`${LARK_DOMAIN}${path}`, {
     ...init,
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
