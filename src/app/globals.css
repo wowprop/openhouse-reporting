@@ -9,3 +9,10 @@ body {
   color: #221F1C;
   font-family: "Inter", sans-serif;
 }
+
+/* Added by FrameHeightReporter when the app is running inside an iframe.
+   `min-h-screen` resolves to the iframe's own height, which would pin the
+   frame at its tallest size and stop it from ever shrinking back down. */
+html.is-embedded main {
+  min-height: 0;
+}

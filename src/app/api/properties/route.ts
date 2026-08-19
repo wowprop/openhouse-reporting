@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { listRecords } from "@/lib/lark";
 import { PropertyOption } from "@/lib/types";
 
+// Without this Next may prerender this route at build time, freezing the property
+// dropdown at whatever Lark held during the build.
+export const dynamic = "force-dynamic";
+
 const PROPERTIES_TABLE_ID = process.env.LARK_TABLE_PROPERTIES!;
 
 export async function GET() {
