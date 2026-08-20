@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
+  { href: "/", label: "Main Page" },
   { href: "/report", label: "Weekly Report" },
   { href: "/leads", label: "Walk-in Leads" },
 ];
@@ -13,11 +14,7 @@ export default function Nav() {
 
   return (
     <header className="border-b border-charcoal/10 bg-white">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/logo.png" alt="Logo" className="h-7 object-contain" />
-        </Link>
-
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-center">
         <nav className="flex items-center gap-1">
           {LINKS.map((link) => {
             const active = pathname === link.href;

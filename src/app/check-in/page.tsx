@@ -80,7 +80,7 @@ export default function CheckInPage() {
   if (status === "success") {
     return (
       <main className="min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-sm w-full text-center">
+        <div className="max-w-sm w-full text-center mt-[60px]">
           <h1 className="font-display text-3xl mb-3">You&apos;re checked in</h1>
           <p className="text-ink/60 mb-8">
             Thanks for registering — enjoy the viewing! An agent will be with you shortly.

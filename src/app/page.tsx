@@ -1,15 +1,13 @@
 import Link from "next/link";
+import Nav from "@/components/Nav";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex items-center justify-center px-6">
+    <>
+      <Nav />
+      <main className="min-h-screen flex items-center justify-center px-6">
       <div className="max-w-md w-full text-center">
-        <img
-          src="/logo.png"
-          alt="Logo"
-          className="h-12 mx-auto mb-6 object-contain"
-        />
-        <h1 className="font-display text-4xl mb-10">Open House Team</h1>
+        <h1 className="font-display text-4xl mb-10 mt-10">Open House Team</h1>
 
         <div className="space-y-4">
           <Link
@@ -33,6 +31,7 @@ export default function Home() {
           </Link>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
