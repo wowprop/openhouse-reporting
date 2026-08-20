@@ -7,10 +7,15 @@
  *
  * Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID. With either unset this no-ops, so
  * the feature can be switched off per-environment without a code change.
+ *
+ * TELEGRAM_TOPIC_ID is optional and targets a single topic inside a forum-enabled
+ * supergroup. Topics do not exist in broadcast channels — if the destination is a real
+ * channel, leave it unset. Unset also means "post to the General topic" in a forum.
  */
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TOPIC_ID = process.env.TELEGRAM_TOPIC_ID;
 
 /** Telegram's HTML parse mode only requires these three to be escaped. */
 function escapeHtml(value: string): string {
@@ -53,15 +58,20 @@ export async function notifyCheckIn(details: CheckInNotification): Promise<void>
     lines.push("", `<b>Looking for:</b> ${escapeHtml(details.specificRequirements)}`);
   }
 
+  const payload: Record<string, unknown> = {
+    chat_id: CHAT_ID,
+    text: lines.join("\n"),
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  };
+
+  // Telegram expects an integer here; a string is rejected outright rather than coerced.
+  if (TOPIC_ID) payload.message_thread_id = Number(TOPIC_ID);
+
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: CHAT_ID,
-      text: lines.join("\n"),
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
