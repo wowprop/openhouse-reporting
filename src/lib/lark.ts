@@ -43,7 +43,16 @@ async function getTenantAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
-async function larkFetch(path: string, init: RequestInit = {}) {
+/**
+ * Lark issues one active tenant_access_token per app, so anything else that authenticates
+ * as this app (a script, a second instance, a manual API call) invalidates the token this
+ * process is holding. Without a retry the cached token stays broken until it expires on
+ * its own — up to 2 hours of every Lark call failing. These are the codes that mean
+ * "your token is no longer good"; on them we drop the cache and try once more.
+ */
+const TOKEN_INVALID_CODES = new Set([99991663, 99991661, 99991668]);
+
+async function larkFetch(path: string, init: RequestInit = {}, allowRetry = true): Promise<any> {
   const token = await getTenantAccessToken();
   const res = await fetch(`${LARK_DOMAIN}${path}`, {
     ...init,
@@ -56,6 +65,11 @@ async function larkFetch(path: string, init: RequestInit = {}) {
   });
   const data = await res.json();
   if (data.code !== 0) {
+    if (allowRetry && TOKEN_INVALID_CODES.has(data.code)) {
+      // Safe to replay: every caller passes a plain string body, not a stream.
+      cachedToken = null;
+      return larkFetch(path, init, false);
+    }
     throw new Error(`Lark API error at ${path}: ${data.msg} (code ${data.code})`);
   }
   return data;
