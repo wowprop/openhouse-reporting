@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Nav from "@/components/Nav";
 
 interface LeadRecord {
@@ -37,6 +37,8 @@ export default function LeadsPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [propertyFilter, setPropertyFilter] = useState("");
+  const [agentFilter, setAgentFilter] = useState("");
   const isFirstLoad = useRef(true);
 
   const fetchLeads = useCallback(async () => {
@@ -83,9 +85,50 @@ export default function LeadsPage() {
   }
 
   // Newest first — the whole point of this page is seeing who just walked in.
-  const sorted = leads
-    ? [...leads].sort((a, b) => toTime(b.fields["Date Created"]) - toTime(a.fields["Date Created"]))
-    : null;
+  const sorted = useMemo(
+    () =>
+      leads
+        ? [...leads].sort(
+            (a, b) => toTime(b.fields["Date Created"]) - toTime(a.fields["Date Created"])
+          )
+        : null,
+    [leads]
+  );
+
+  // Options come from the leads themselves rather than /api/properties and /api/agents, so
+  // the dropdowns only ever offer values that actually appear here — no combination can
+  // return an empty table. The current selection is kept even if it drops out of the data
+  // on a later poll, otherwise the <select> would silently reset itself mid-use.
+  const { propertyOptions, agentOptions } = useMemo(() => {
+    const properties = new Set<string>();
+    const agents = new Set<string>();
+    for (const lead of sorted ?? []) {
+      const property = formatCell(lead.fields["Property"]);
+      const agent = formatCell(lead.fields["Served By"]);
+      if (property !== "—") properties.add(property);
+      if (agent !== "—") agents.add(agent);
+    }
+    if (propertyFilter) properties.add(propertyFilter);
+    if (agentFilter) agents.add(agentFilter);
+    return {
+      propertyOptions: [...properties].sort((a, b) => a.localeCompare(b)),
+      agentOptions: [...agents].sort((a, b) => a.localeCompare(b)),
+    };
+  }, [sorted, propertyFilter, agentFilter]);
+
+  const visible = useMemo(
+    () =>
+      sorted
+        ? sorted.filter(
+            (lead) =>
+              (!propertyFilter || formatCell(lead.fields["Property"]) === propertyFilter) &&
+              (!agentFilter || formatCell(lead.fields["Served By"]) === agentFilter)
+          )
+        : null,
+    [sorted, propertyFilter, agentFilter]
+  );
+
+  const filtersActive = Boolean(propertyFilter || agentFilter);
 
   return (
     <>
@@ -110,12 +153,72 @@ export default function LeadsPage() {
             {lastUpdated && <> · Updated {lastUpdated.toLocaleTimeString("en-SG")}</>}
           </p>
 
+          {sorted && sorted.length > 0 && (
+            <div className="flex flex-wrap items-end gap-3 mb-5">
+              <label className="block">
+                <span className="block text-xs font-medium text-ink/60 mb-1">Property</span>
+                <select
+                  value={propertyFilter}
+                  onChange={(e) => setPropertyFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">All properties</option>
+                  {propertyOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-xs font-medium text-ink/60 mb-1">Served By</span>
+                <select
+                  value={agentFilter}
+                  onChange={(e) => setAgentFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">All agents</option>
+                  {agentOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {filtersActive && (
+                <button
+                  onClick={() => {
+                    setPropertyFilter("");
+                    setAgentFilter("");
+                  }}
+                  className="text-sm font-medium text-gold-dark hover:text-charcoal transition-colors pb-2"
+                >
+                  Clear filters
+                </button>
+              )}
+
+              {visible && (
+                <p className="text-sm text-ink/50 pb-2 ml-auto">
+                  {filtersActive
+                    ? `Showing ${visible.length} of ${sorted.length}`
+                    : `${sorted.length} ${sorted.length === 1 ? "lead" : "leads"}`}
+                </p>
+              )}
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {!sorted && !error && <p className="text-sm text-ink/50">Loading…</p>}
+          {!visible && !error && <p className="text-sm text-ink/50">Loading…</p>}
 
           {sorted && sorted.length === 0 && <p className="text-sm text-ink/50">No leads yet.</p>}
 
-          {sorted && sorted.length > 0 && (
+          {visible && visible.length === 0 && sorted && sorted.length > 0 && (
+            <p className="text-sm text-ink/50">No leads match these filters.</p>
+          )}
+
+          {visible && visible.length > 0 && (
             <div className="overflow-x-auto rounded-xl border border-charcoal/10 bg-white shadow-sm">
               <table className="min-w-full text-sm">
                 <thead>
@@ -134,7 +237,7 @@ export default function LeadsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.map((lead) => {
+                  {visible.map((lead) => {
                     const isOpen = expanded.has(lead.record_id);
                     const requirements = formatCell(lead.fields[LONG_TEXT_COLUMN]);
 
@@ -218,6 +321,9 @@ export default function LeadsPage() {
     </>
   );
 }
+
+const selectClass =
+  "rounded-md border border-charcoal/15 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold";
 
 /** Lark date fields come back as epoch milliseconds. */
 function toTime(value: unknown): number {
