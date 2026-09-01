@@ -10,6 +10,20 @@ body {
   font-family: "Inter", sans-serif;
 }
 
+/* The native <select> arrow sits flush against the border and browsers disagree on
+   whether padding-right moves it, so draw our own chevron instead. This gives a
+   consistent gap from the edge and consistent spacing from the value text.
+   Element+class beats Tailwind's `px-*` utility, so the padding-right below wins. */
+select.select-field {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23221F1C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  background-size: 1.1rem;
+  padding-right: 2.75rem;
+}
+
 /* Added by FrameHeightReporter when the app is running inside an iframe.
    `min-h-screen` resolves to the iframe's own height, which would pin the
    frame at its tallest size and stop it from ever shrinking back down. */

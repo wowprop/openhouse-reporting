@@ -323,7 +323,7 @@ export default function LeadsPage() {
 }
 
 const selectClass =
-  "rounded-md border border-charcoal/15 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold";
+  "select-field rounded-md border border-charcoal/15 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold";
 
 /** Lark date fields come back as epoch milliseconds. */
 function toTime(value: unknown): number {

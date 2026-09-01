@@ -117,7 +117,7 @@ if (status === "success") {
               required
               value={propertyRecordId}
               onChange={(e) => setPropertyRecordId(e.target.value)}
-              className={inputClass}
+              className={selectClass}
               disabled={propertiesLoading}
             >
               <option value="" disabled>
@@ -226,7 +226,7 @@ if (status === "success") {
                             followUpStatus: e.target.value as FollowUpStatus,
                           })
                         }
-                        className={inputClass}
+                        className={selectClass}
                       >
                         {FOLLOW_UP_OPTIONS.map((opt) => (
                           <option key={opt} value={opt}>
@@ -270,6 +270,8 @@ if (status === "success") {
 
 const inputClass =
   "w-full rounded-md border border-charcoal/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold bg-white";
+
+const selectClass = `${inputClass} select-field`;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

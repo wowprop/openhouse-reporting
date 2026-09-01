@@ -131,7 +131,7 @@ export default function CheckInPage() {
               required
               value={form.propertyRecordId}
               onChange={(e) => update("propertyRecordId", e.target.value)}
-              className={inputClass}
+              className={selectClass}
               disabled={optionsLoading}
             >
               <option value="" disabled>
@@ -150,7 +150,7 @@ export default function CheckInPage() {
               required
               value={form.agentRecordId}
               onChange={(e) => update("agentRecordId", e.target.value)}
-              className={inputClass}
+              className={selectClass}
               disabled={optionsLoading}
             >
               <option value="" disabled>
@@ -249,6 +249,8 @@ export default function CheckInPage() {
 
 const inputClass =
   "w-full rounded-md border border-charcoal/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold bg-white";
+
+const selectClass = `${inputClass} select-field`;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
