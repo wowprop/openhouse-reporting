@@ -4,6 +4,32 @@ Internal tool for the open house team: weekly reporting form, live walk-in lead 
 and the public open-house check-in form. Backend of record is a Lark Base. Frontend is
 Next.js (App Router, TypeScript), deployed on Railway.
 
+## Place in the wider PropertyGiant stack
+
+The people using this are **affiliate realtors**: they check in walk-ins and submit open
+house reports. It is one of several PropertyGiant systems. Shared context lives in the
+sibling wiki checkout. Read it first when a change touches anything outside this repo:
+
+- `../wiki/architecture.md`: every system, the shared Supabase project, agent rules
+- `../wiki/systems/openhouse-reporting.md`: this system's one-page summary
+
+Conventions that come from that wider context:
+
+- **Keep it intentionally simple.** Affiliate-facing flows must stay easy for
+  non-technical realtors to use.
+- **Don't couple it to GiantOS internals**, and don't move it into the GiantOS codebase
+  without a clear need. GiantOS and the public website share one Supabase project. This
+  repo doesn't touch it.
+- **Lark Base is the source of truth for report data.** Sync to Supabase only if that is
+  explicitly asked for. No Supabase code exists here today.
+
+**Machine migration (2026-10):** ownership moved from the MacBook M1 Max to the Mini
+(Admin user). The checkout lives at `~/Desktop/propertygiant/openhouse-reporting`. Older
+notes that say `~/propertygiant/...` or `~/Projects/...` are stale, so use the relative
+`../wiki` paths above. No local `.env` has been copied over yet. Copy the Railway variables (and any
+`.env` still on the MacBook) before running anything that needs credentials, such as
+`npm run check-field`.
+
 ## Architecture
 
 - `/report` — weekly report form (Property dropdown, dynamic "+Add" buyer reference rows)
