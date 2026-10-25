@@ -139,3 +139,101 @@ export async function listRecords(
     pageToken: data.data.page_token,
   };
 }
+
+/**
+ * Every record in a table, following pagination. The dropdown routes used to read only
+ * the first page, which silently hid Properties/Agents once a table passed the page size.
+ */
+export async function listAllRecords(
+  tableId: string,
+  pageSize = 500
+): Promise<Array<{ record_id: string; fields: Record<string, unknown> }>> {
+  const items: Array<{ record_id: string; fields: Record<string, unknown> }> = [];
+  let pageToken: string | undefined;
+
+  do {
+    const page = await listRecords(tableId, { pageSize, pageToken });
+    items.push(...page.items);
+    const nextToken = page.hasMore ? page.pageToken : undefined;
+    // Defensive: never loop forever if Lark ever repeats a token.
+    if (nextToken && nextToken === pageToken) break;
+    pageToken = nextToken;
+  } while (pageToken);
+
+  return items;
+}
+
+export interface LarkField {
+  field_id: string;
+  field_name: string;
+  type: number;
+  property?: unknown;
+}
+
+/** List a table's fields. Used to detect whether the "Active" checkbox has been added. */
+export async function listFields(tableId: string): Promise<LarkField[]> {
+  const fields: LarkField[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const qs = new URLSearchParams({ page_size: "100" });
+    if (pageToken) qs.set("page_token", pageToken);
+
+    const data = await larkFetch(
+      `/open-apis/bitable/v1/apps/${BASE_APP_TOKEN}/tables/${tableId}/fields?${qs.toString()}`
+    );
+    fields.push(...(data.data.items || []));
+    pageToken = data.data.has_more ? data.data.page_token : undefined;
+  } while (pageToken);
+
+  return fields;
+}
+
+/** True when the table has a field with this exact name (case-sensitive). */
+export async function hasField(tableId: string, fieldName: string): Promise<boolean> {
+  const fields = await listFields(tableId);
+  return fields.some((field) => field.field_name === fieldName);
+}
+
+/**
+ * Create a field. Type 7 is Lark's checkbox type; this is what the "Active" columns use.
+ * Kept generic (rather than hard-coded to "Active") so the same helper can add other
+ * fields later.
+ */
+export async function createField(
+  tableId: string,
+  field: { field_name: string; type: number; property?: unknown }
+): Promise<string> {
+  const data = await larkFetch(
+    `/open-apis/bitable/v1/apps/${BASE_APP_TOKEN}/tables/${tableId}/fields`,
+    {
+      method: "POST",
+      body: JSON.stringify(field),
+    }
+  );
+  return data.data.field.field_id;
+}
+
+/** Batch-update existing records. Lark caps a batch at 1,000; 500 is comfortably safe. */
+export async function batchUpdateRecords(
+  tableId: string,
+  records: Array<{ recordId: string; fields: Record<string, unknown> }>
+): Promise<void> {
+  const CHUNK_SIZE = 500;
+
+  for (let i = 0; i < records.length; i += CHUNK_SIZE) {
+    const chunk = records.slice(i, i + CHUNK_SIZE);
+    await larkFetch(
+      `/open-apis/bitable/v1/apps/${BASE_APP_TOKEN}/tables/${tableId}/records/batch_update`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          records: chunk.map(({ recordId, fields }) => ({
+            record_id: recordId,
+            fields,
+          })),
+        }),
+      }
+    );
+  }
+}

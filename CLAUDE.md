@@ -81,7 +81,8 @@ cannot be tested from a localhost parent — the browser drops those messages by
 ```
 app_token: WgVRbO0pSa1WQys2dVLlHyQJgog
 
-Properties        tbly12QHaVv2cqdR   — ongoing open house listings (Address field)
+Properties        tbly12QHaVv2cqdR   — ongoing open house listings (Address field,
+                                        Active checkbox)
 Weekly Report     tble1S4vzSTI4BPy   — Date, Property (link), Submitted By, Groups,
                                         Potential Leads, Buyer Reference (link), Report ID
 Buyer References  tblxv34BmZ6YaMkQ   — Last 4 Digits Mobile No., Key Feedback,
@@ -89,7 +90,8 @@ Buyer References  tblxv34BmZ6YaMkQ   — Last 4 Digits Mobile No., Key Feedback,
 Walk-in Leads     tblqDTrCP4R5wEV8   — Name, Contact, Property (link), Served By (link),
                                         Got Agent?, What Brings You Here?, Timeline,
                                         Need to Sell First?, Specific Requirements, NRIC
-Agents            tblWqZbUbKbcmVzI   — Name (linked from Walk-in Leads "Served By")
+Agents            tblWqZbUbKbcmVzI   — Name (linked from Walk-in Leads "Served By"),
+                                        Active checkbox
 ```
 
 Follow Up Status options (exact strings, case-sensitive):
@@ -125,6 +127,15 @@ Follow Up Status options (exact strings, case-sensitive):
    which inside an iframe resolves to the frame's *own* height, so the frame could grow but
    never shrink. The reporter adds `.is-embedded` to `<html>` and `globals.css` relaxes
    `min-height` for it. Removing either half reintroduces the stuck-height bug.
+9. **Property/Agent pickers only show rows with the Lark `Active` checkbox ticked.**
+   `/api/properties` and `/api/agents` go through `filterActive()` (`src/lib/active.ts`).
+   Only an explicit `true` is shown. If the `Active` field does not exist at all, the
+   helper fails open (returns everything) and logs one warning, so a deploy that lands
+   before the schema migration cannot empty the dropdowns. Run
+   `npm run ensure-active-fields` to create the checkbox and tick every existing row;
+   new rows start unchecked and stay hidden until someone ticks them. Historical
+   leads/reports are deliberately not filtered — an inactive property/agent still appears
+   on records created while it was active.
 
 ## Deployment (Railway)
 
@@ -170,6 +181,10 @@ Follow Up Status options (exact strings, case-sensitive):
 
 ## Open TODOs
 
+- [x] Run `npm run ensure-active-fields` against Lark to add the `Active` checkbox to
+      Properties and Agents and tick every existing row — done 2026-10-25 (6 Properties,
+      20 Agents). New rows must have `Active` ticked or they stay hidden; the dropdown
+      routes fail open with a warning if the field is ever removed.
 - [x] Deploy on Railway and set up the `/check-in` Webflow iframe embed — live
 - [x] Confirm the `frame-ancestors` origins in `next.config.js` — verified live
 - [ ] Confirm the four Walk-in Leads select fields (`Got Agent?`, `What Brings You Here?`,
